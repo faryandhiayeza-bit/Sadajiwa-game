@@ -1,0 +1,44 @@
+{
+  "1": {
+    "nama": "MV Agusta F4 LH44 (Lewis Hamilton Edition)",
+    "rider": "Lewis Hamilton",
+    "harga": 15000,
+    "speed": 312,
+    "foto": "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800"
+  },
+  "2": {
+    "nama": "Husqvarna Vitpilen 701 Custom",
+    "rider": "Charles Leclerc",
+    "harga": 8500,
+    "speed": 190,
+    "foto": "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=800"
+  },
+  "3": {
+    "nama": "Yamaha YZF-R1 GYTR Track Edition",
+    "rider": "Fernando Alonso",
+    "harga": 12000,
+    "speed": 299,
+    "foto": "https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?w=800"
+  },
+  "4": {
+    "nama": "Honda CBR1000RR-R Fireblade SP",
+    "rider": "Max Verstappen",
+    "harga": 14000,
+    "speed": 305,
+    "foto": "https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=800"
+  },
+  "5": {
+    "nama": "Ducati Panigale V4 S Paddock",
+    "rider": "Carlos Sainz",
+    "harga": 13500,
+    "speed": 300,
+    "foto": "https://images.unsplash.com/photo-1558980664-3a031cf67ea8?w=800"
+  },
+  "6": {
+    "nama": "Vespa Racing Sixties Paddock Edition",
+    "rider": "Lando Norris",
+    "harga": 3000,
+    "speed": 115,
+    "foto": "https://images.unsplash.com/photo-1525160354320-d8e92641c563?w=800"
+  }
+}
