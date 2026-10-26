@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sadjiwa Circuit HD</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; touch-action: none; -webkit-touch-callout: none; user-select: none; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0c10; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    canvas { display: block; width: 100vw; height: 100vh; }
+    
+    /* HUD Atas */
+    #hud {
+      position: absolute; top: 15px; left: 15px; right: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      color: #fff; pointer-events: none; z-index: 10;
+    }
+    .hud-box {
+      background: rgba(0, 0, 0, 0.65); padding: 8px 16px; border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+    }
+    .hud-val { font-size: 22px; font-weight: 800; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
+    .hud-label { font-size: 10px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Kontrol Layar */
+    #controls {
+      position: absolute; bottom: 25px; left: 0; width: 100%;
+      display: flex; justify-content: space-between; align-items: flex-end;
+      padding: 0 25px; pointer-events: auto; z-index: 10;
+    }
+    .steering-group { display: flex; gap: 15px; }
+    .btn-steer {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(40,40,45,0.9) 0%, rgba(15,15,20,0.95) 100%);
+      border: 2px solid rgba(255,255,255,0.25); color: #fff; font-size: 26px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6); active: scale(0.92);
+    }
+    .btn-pedal {
+      width: 80px; height: 110px; border-radius: 20px;
+      background: linear-gradient(180deg, #10b981 0%, #047857 100%);
+      border: 2px solid #34d399; color: #fff; font-weight: 800; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    }
+    .btn-pedal:active { transform: scale(0.95); opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <div id="hud">
+    <div class="hud-box">
+      <div class="hud-label">Speed</div>
+      <div><span id="txtSpeed" class="hud-val">0</span> <span style="font-size:12px;color:#aaa">km/h</span></div>
+    </div>
+    <div class="hud-box" style="text-align:right">
+      <div class="hud-label">Distance</div>
+      <div><span id="txtDist" class="hud-val">0</span> <span style="font-size:12px;color:#aaa">m</span></div>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="controls">
+    <div class="steering-group">
+      <div class="btn-steer" id="btnLeft">◀</div>
+      <div class="btn-steer" id="btnRight">▶</div>
+    </div>
+    <div class="btn-pedal" id="btnGas">GAS</div>
+  </div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.expand();
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      canvas.width = window.innerWidth * window.devicePixelRatio;
+      canvas.height = window.innerHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+
+    let speed = 0;
+    let maxSpeed = 260;
+    let distance = 0;
+    let bikeX = W / 2;
+    let steer = 0;
+    let gas = false;
+
+    // Kontrol Sentuh
+    const leftBtn = document.getElementById("btnLeft");
+    const rightBtn = document.getElementById("btnRight");
+    const gasBtn = document.getElementById("btnGas");
+
+    leftBtn.addEventListener("touchstart", (e) => { e.preventDefault(); steer = -6; });
+    leftBtn.addEventListener("touchend", () => { steer = 0; });
+    rightBtn.addEventListener("touchstart", (e) => { e.preventDefault(); steer = 6; });
+    rightBtn.addEventListener("touchend", () => { steer = 0; });
+
+    gasBtn.addEventListener("touchstart", (e) => { e.preventDefault(); gas = true; });
+    gasBtn.addEventListener("touchend", () => { gas = false; });
+
+    let trackY = 0;
+
+    function loop() {
+      // Akselerasi
+      if (gas && speed < maxSpeed) speed += 1.8;
+      else if (!gas && speed > 0) speed -= 1.0;
+      speed = Math.max(0, speed);
+
+      // Posisi kemudi
+      bikeX += steer * (speed / 70);
+      bikeX = Math.max(70, Math.min(W - 70, bikeX));
+
+      distance += Math.round(speed * 0.05);
+      trackY = (trackY + speed * 0.25) % 80;
+
+      // Render Latar Belakang Trek Malam
+      ctx.fillStyle = "#111318";
+      ctx.fillRect(0, 0, W, H);
+
+      // Aspal Sirkuit
+      const roadW = W * 0.82;
+      const roadX = (W - roadW) / 2;
+      ctx.fillStyle = "#1e2026";
+      ctx.fillRect(roadX, 0, roadW, H);
+
+      // Kerb Balap Kiri Kanan (Merah Putih F1)
+      const kerbW = 12;
+      for (let y = trackY - 80; y < H; y += 40) {
+        ctx.fillStyle = (Math.floor((y - trackY) / 40) % 2 === 0) ? "#ef4444" : "#ffffff";
+        ctx.fillRect(roadX - kerbW, y, kerbW, 40);
+        ctx.fillRect(roadX + roadW, y, kerbW, 40);
+      }
+
+      // Garis Tengah Sirkuit
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      for (let y = trackY - 80; y < H; y += 80) {
+        ctx.fillRect(W / 2 - 4, y, 8, 45);
+      }
+
+      // Bayangan & Motor Balap (Stylized HD)
+      ctx.save();
+      ctx.translate(bikeX, H - 200);
+      ctx.rotate((steer * 0.03));
+
+      // Bayangan
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
+      ctx.beginPath();
+      ctx.ellipse(0, 30, 20, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bodi Motor Paddock
+      ctx.fillStyle = "#00ffcc";
+      ctx.fillRect(-12, -40, 24, 70);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(-8, -20, 16, 40);
+
+      // Ban Depan & Belakang
+      ctx.fillStyle = "#000";
+      ctx.fillRect(-6, -55, 12, 18);
+      ctx.fillRect(-6, 25, 12, 20);
+
+      // Helm Pembalap
+      ctx.fillStyle = "#f59e0b";
+      ctx.beginPath();
+      ctx.arc(0, -5, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      // Update Teks HUD
+      document.getElementById("txtSpeed").innerText = Math.round(speed);
+      document.getElementById("txtDist").innerText = distance;
+
+      requestAnimationFrame(loop);
+    }
+    loop();
+  </script>
+</body>
+</html>
